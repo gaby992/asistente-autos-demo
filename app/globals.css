@@ -1,0 +1,40 @@
+/* Branding (molde NOVA neutral) — tokens fáciles de cambiar para white-label. */
+:root {
+  --bg: #0b0b0c; /* fondo casi negro */
+  --surface: #16171a; /* superficie de chat gris oscuro */
+  --surface-2: #1f2126; /* burbuja del usuario / inputs */
+  --text: #f2f2f0; /* blanco hueso */
+  --text-dim: #9a9aa0; /* gris secundario */
+  --accent: #2e6bff; /* azul de marca */
+  --accent-text: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-text);
+}
