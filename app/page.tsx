@@ -13,33 +13,7 @@ export default function Page() {
         gap: 22,
       }}
     >
-      {/* Hero */}
-      <section style={{ textAlign: "center", maxWidth: 560 }}>
-        <h1
-          style={{
-            fontSize: "clamp(24px, 5.5vw, 34px)",
-            lineHeight: 1.15,
-            margin: "0 0 10px",
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Tu asesor de autos, disponible 24/7
-        </h1>
-        <p
-          style={{
-            color: "var(--text-dim)",
-            fontSize: "clamp(14px, 3.5vw, 16px)",
-            margin: 0,
-            maxWidth: 460,
-            marginInline: "auto",
-          }}
-        >
-          Cuéntame qué buscas y te conecto con tu asesor para cerrar el trato.
-        </p>
-      </section>
-
-      {/* Chat — widget contenido */}
+      {/* Chat — widget contenido (simula la pantalla de un celular) */}
       <Chat />
 
       {/* Footer mínimo */}
