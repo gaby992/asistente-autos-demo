@@ -7,6 +7,7 @@
   --text-dim: #9a9aa0; /* gris secundario */
   --accent: #2e6bff; /* azul de marca */
   --accent-text: #ffffff;
+  --online: #22c55e; /* punto verde "en línea" */
   --border: rgba(255, 255, 255, 0.08);
 }
 

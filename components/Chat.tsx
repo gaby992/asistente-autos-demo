@@ -4,10 +4,15 @@ import { useEffect, useRef, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+// Marca del asistente (white-label: cambia aquí nombre, inicial y subtítulo).
+const ASSISTANT_NAME = "Max";
+const ASSISTANT_INITIAL = "M";
+const ASSISTANT_SUBTITLE = "Asistente de Ventas";
+
 const WELCOME: Message = {
   role: "assistant",
   content:
-    "¡Hola! Soy Max, te ayudo a encontrar tu próximo auto. ¿Buscas nuevo o seminuevo?",
+    "¡Hola! Soy Max 👋 tu asistente de ventas. ¿Buscas auto nuevo o seminuevo?",
 };
 
 export default function Chat() {
@@ -100,14 +105,58 @@ export default function Chat() {
       style={{
         display: "flex",
         flexDirection: "column",
+        width: "100%",
+        maxWidth: 440,
+        margin: "0 auto",
         background: "var(--surface)",
         border: "1px solid var(--border)",
-        borderRadius: 16,
+        borderRadius: 18,
         overflow: "hidden",
-        height: "min(70vh, 560px)",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+        height: "min(74vh, 620px)",
+        boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
       }}
     >
+      {/* Header del widget */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "14px 16px",
+          borderBottom: "1px solid var(--border)",
+          background: "var(--surface)",
+        }}
+      >
+        <Avatar size={40} online />
+        <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+          <span style={{ fontWeight: 700, fontSize: 15 }}>{ASSISTANT_NAME}</span>
+          <span style={{ fontSize: 12.5, color: "var(--text-dim)" }}>
+            {ASSISTANT_SUBTITLE}
+          </span>
+        </div>
+        <span
+          style={{
+            marginLeft: "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            color: "var(--text-dim)",
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "var(--online)",
+              boxShadow: "0 0 0 3px rgba(34,197,94,0.18)",
+            }}
+          />
+          En línea
+        </span>
+      </div>
+
       {/* Mensajes */}
       <div
         ref={scrollRef}
@@ -121,12 +170,12 @@ export default function Chat() {
         }}
       >
         {messages.map((m, i) => (
-          <Bubble key={i} role={m.role} content={m.content} />
+          <Row key={i} role={m.role} content={m.content} />
         ))}
 
         {loading &&
           messages[messages.length - 1]?.role === "user" && (
-            <Bubble role="assistant" content="…" typing />
+            <Row role="assistant" content="…" typing />
           )}
       </div>
 
@@ -198,7 +247,46 @@ export default function Chat() {
   );
 }
 
-function Bubble({
+// Avatar circular del bot con inicial. `online` agrega el punto verde (header).
+function Avatar({ size = 28, online = false }: { size?: number; online?: boolean }) {
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          background: "var(--accent)",
+          color: "var(--accent-text)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 700,
+          fontSize: size * 0.45,
+        }}
+      >
+        {ASSISTANT_INITIAL}
+      </div>
+      {online && (
+        <span
+          style={{
+            position: "absolute",
+            right: -1,
+            bottom: -1,
+            width: 11,
+            height: 11,
+            borderRadius: "50%",
+            background: "var(--online)",
+            border: "2px solid var(--surface)",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Una fila de mensaje. El asistente lleva avatar a la izquierda; el usuario va a la derecha.
+function Row({
   role,
   content,
   typing,
@@ -208,33 +296,42 @@ function Bubble({
   typing?: boolean;
 }) {
   const isUser = role === "user";
-  return (
+
+  const bubble = (
     <div
       style={{
-        display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
+        maxWidth: "100%",
+        padding: "10px 14px",
+        borderRadius: 14,
+        fontSize: 15,
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+        background: isUser ? "var(--accent)" : "var(--surface-2)",
+        color: isUser ? "var(--accent-text)" : "var(--text)",
+        borderBottomRightRadius: isUser ? 4 : 14,
+        borderBottomLeftRadius: isUser ? 14 : 4,
       }}
     >
-      <div
-        style={{
-          maxWidth: "82%",
-          padding: "10px 14px",
-          borderRadius: 14,
-          fontSize: 15,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          background: isUser ? "var(--surface-2)" : "var(--accent)",
-          color: isUser ? "var(--text)" : "var(--accent-text)",
-          borderBottomRightRadius: isUser ? 4 : 14,
-          borderBottomLeftRadius: isUser ? 14 : 4,
-        }}
-      >
-        {typing ? (
-          <span style={{ opacity: 0.85, letterSpacing: 2 }}>•••</span>
-        ) : (
-          content
-        )}
+      {typing ? (
+        <span style={{ opacity: 0.85, letterSpacing: 2 }}>•••</span>
+      ) : (
+        content
+      )}
+    </div>
+  );
+
+  if (isUser) {
+    return (
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ maxWidth: "82%" }}>{bubble}</div>
       </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", justifyContent: "flex-start", gap: 8, alignItems: "flex-end" }}>
+      <Avatar size={28} />
+      <div style={{ maxWidth: "82%" }}>{bubble}</div>
     </div>
   );
 }
