@@ -56,13 +56,15 @@ export default function Chat() {
       ]);
 
       if (reader) {
+        let buffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
+          buffer += decoder.decode(value, { stream: true });
           
-          // Parse Vercel AI SDK text stream format (0:"text")
-          const lines = chunk.split('\n');
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          
           for (const line of lines) {
             if (line.startsWith('0:')) {
               try {
@@ -74,11 +76,11 @@ export default function Chat() {
                   return newMsgs;
                 });
               } catch (e) {
-                // Ignore parse errors for incomplete chunks
+                // Ignore parse errors
               }
-            } else if (line && !line.startsWith('0:') && !line.match(/^[0-9]+:/)) {
-               // Fallback if the API returns plain text instead of Vercel format
-               assistantContent += line;
+            } else if (line.trim() !== '' && !line.match(/^[0-9]+:/)) {
+               // Fallback for raw text streams
+               assistantContent += line + '\n';
                setMessages(prev => {
                 const newMsgs = [...prev];
                 newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: assistantContent };
@@ -132,7 +134,20 @@ export default function Chat() {
                   m.role === 'user' ? styles.bubbleUser : (m.role === 'error' ? styles.bubbleError : styles.bubbleAssistant)
                 }`}
               >
-                <p>{m.content}</p>
+                <div style={{ margin: 0 }}>
+                  {m.content
+                    // Fix model clumping lists without newlines: add newline before hyphen if it follows text
+                    .replace(/([a-zA-Z0-9.,?!])\s*-\s*(?=[a-zA-Z0-9])/g, '$1\n\n- ')
+                    // Add newline before ¿ or ¡ if it follows text
+                    .replace(/([a-zA-Z0-9.,?!])\s*(¿|¡)/g, '$1\n\n$2')
+                    .split('\n')
+                    .map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        <br />
+                      </span>
+                    ))}
+                </div>
               </div>
             </div>
           );
