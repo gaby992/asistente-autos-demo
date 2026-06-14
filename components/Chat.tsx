@@ -136,14 +136,16 @@ export default function Chat() {
               >
                 <div style={{ margin: 0 }}>
                   {m.content
-                    // Fix model clumping lists without newlines: add newline before hyphen if it follows text
-                    .replace(/([a-zA-Z0-9.,?!])\s*-\s*(?=[a-zA-Z0-9])/g, '$1\n\n- ')
+                    // Safely add newlines before list items (" - ") without breaking words like "V-Drive"
+                    .replace(/\s+-\s+(?=[a-zA-Z*])/g, '\n- ')
                     // Add newline before ¿ or ¡ if it follows text
                     .replace(/([a-zA-Z0-9.,?!])\s*(¿|¡)/g, '$1\n\n$2')
                     .split('\n')
                     .map((line, i) => (
                       <span key={i}>
-                        {line}
+                        {line.split(/[*]{1,2}([^*]+)[*]{1,2}/g).map((part, j) => (
+                          j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+                        ))}
                         <br />
                       </span>
                     ))}
