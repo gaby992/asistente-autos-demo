@@ -1,10 +1,10 @@
 'use client';
 
-import { Send, CarFront, Loader2 } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import styles from './Chat.module.css';
 
-type Message = { id: string; role: 'user' | 'assistant'; content: string };
+type Message = { id: string; role: 'user' | 'assistant' | 'error'; content: string };
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
@@ -31,7 +31,8 @@ export default function Chat() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input };
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input.trim() };
+    const historyToSent = [...messages, userMsg].filter(m => m.role !== 'error');
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -40,7 +41,7 @@ export default function Chat() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
+        body: JSON.stringify({ messages: historyToSent }),
       });
 
       if (!response.ok) throw new Error(response.statusText);
@@ -75,12 +76,24 @@ export default function Chat() {
               } catch (e) {
                 // Ignore parse errors for incomplete chunks
               }
+            } else if (line && !line.startsWith('0:') && !line.match(/^[0-9]+:/)) {
+               // Fallback if the API returns plain text instead of Vercel format
+               assistantContent += line;
+               setMessages(prev => {
+                const newMsgs = [...prev];
+                newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: assistantContent };
+                return newMsgs;
+              });
             }
           }
         }
       }
     } catch (error) {
-      console.error(error);
+      console.error('Chat error:', error);
+      setMessages(prev => [
+        ...prev,
+        { id: Date.now().toString(), role: 'error', content: 'Tuve un problema para responder, inténtalo de nuevo.' }
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -90,43 +103,49 @@ export default function Chat() {
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
         <div className={styles.headerAvatar}>
-          <CarFront size={20} />
+          M
         </div>
         <div className={styles.headerInfo}>
           <h2>Max</h2>
+          <span className={styles.subtitle}>Asistente de Ventas</span>
           <span className={styles.status}>En línea</span>
         </div>
       </div>
 
       <div className={styles.messagesArea}>
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`${styles.messageWrapper} ${
-              m.role === 'user' ? styles.wrapperUser : styles.wrapperAssistant
-            }`}
-          >
-            {m.role === 'assistant' && (
-              <div className={styles.messageAvatar}>
-                <CarFront size={16} />
-              </div>
-            )}
+        {messages.map((m) => {
+          const isAssistant = m.role === 'assistant' || m.role === 'error';
+          return (
             <div
-              className={`${styles.messageBubble} ${
-                m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant
+              key={m.id}
+              className={`${styles.messageWrapper} ${
+                isAssistant ? styles.wrapperAssistant : styles.wrapperUser
               }`}
             >
-              <p>{m.content}</p>
+              {isAssistant && (
+                <div className={styles.messageAvatar}>
+                  M
+                </div>
+              )}
+              <div
+                className={`${styles.messageBubble} ${
+                  m.role === 'user' ? styles.bubbleUser : (m.role === 'error' ? styles.bubbleError : styles.bubbleAssistant)
+                }`}
+              >
+                <p>{m.content}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {isLoading && (
           <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
             <div className={styles.messageAvatar}>
-              <CarFront size={16} />
+              M
             </div>
             <div className={`${styles.messageBubble} ${styles.bubbleAssistant}`}>
-              <Loader2 size={16} className={styles.typingIndicator} />
+              <div className={styles.typingIndicator}>
+                <span></span><span></span><span></span>
+              </div>
             </div>
           </div>
         )}
