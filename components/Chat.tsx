@@ -32,7 +32,9 @@ export default function Chat() {
     if (!input.trim() || isLoading) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input.trim() };
-    const historyToSent = [...messages, userMsg].filter(m => m.role !== 'error');
+    const historyToSent = [...messages, userMsg]
+      .filter(m => m.role !== 'error')
+      .map(m => ({ role: m.role, content: m.content }));
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -57,36 +59,44 @@ export default function Chat() {
 
       if (reader) {
         let buffer = '';
+        
+        const processLine = (line: string) => {
+          if (line.startsWith('0:')) {
+            try {
+              const textChunk = JSON.parse(line.substring(2));
+              assistantContent += textChunk;
+              setMessages(prev => {
+                const newMsgs = [...prev];
+                newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: assistantContent };
+                return newMsgs;
+              });
+            } catch (e) {
+              // Ignore parse errors
+            }
+          } else if (line.trim() !== '' && !line.match(/^[0-9a-zA-Z]+:/)) {
+            // Fallback for raw text streams. Exclude any data stream protocol prefixes like d:, e:, etc.
+            assistantContent += line + '\n';
+            setMessages(prev => {
+              const newMsgs = [...prev];
+              newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: assistantContent.trim() };
+              return newMsgs;
+            });
+          }
+        };
+
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            if (buffer) processLine(buffer);
+            break;
+          }
           buffer += decoder.decode(value, { stream: true });
           
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
           
           for (const line of lines) {
-            if (line.startsWith('0:')) {
-              try {
-                const textChunk = JSON.parse(line.substring(2));
-                assistantContent += textChunk;
-                setMessages(prev => {
-                  const newMsgs = [...prev];
-                  newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: assistantContent };
-                  return newMsgs;
-                });
-              } catch (e) {
-                // Ignore parse errors
-              }
-            } else if (line.trim() !== '' && !line.match(/^[0-9]+:/)) {
-               // Fallback for raw text streams
-               assistantContent += line + '\n';
-               setMessages(prev => {
-                const newMsgs = [...prev];
-                newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: assistantContent };
-                return newMsgs;
-              });
-            }
+            processLine(line);
           }
         }
       }
